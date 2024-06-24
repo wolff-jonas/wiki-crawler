@@ -1,0 +1,30 @@
+services:
+  neo4j:
+    image: neo4j
+    volumes:
+      - /data/wiki_crawler/:/data
+    ports:
+      - 7474:7474
+      - 7687:7687
+    environment:
+      - NEO4J_AUTH=neo4j/dbweoius
+    healthcheck:
+      test: wget http://localhost:7474 || exit 1
+      interval: 1s
+      timeout: 10s
+      retries: 20
+      start_period: 3s
+
+  crawler:
+    image: wiki-crawler
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    environment:
+      - NEO4J_HOST=neo4j
+    healthcheck:
+      test: "curl --fail --silent localhost:8081/actuator/health | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
