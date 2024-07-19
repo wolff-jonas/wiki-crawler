@@ -1,10 +1,14 @@
-package it.jwolff.crawler.crawler
+package it.jwolff.crawler.crawler.controller
 
+import it.jwolff.crawler.crawler.ThreadService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 
+/**
+ * Can be used to start, stop scraping and request the application status
+ */
 @RestController
 class ControlController(
     @Autowired val threadService: ThreadService

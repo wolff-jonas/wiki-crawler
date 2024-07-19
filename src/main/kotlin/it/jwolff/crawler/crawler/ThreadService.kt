@@ -1,17 +1,18 @@
 package it.jwolff.crawler.crawler
 
+import it.jwolff.crawler.crawler.repository.LinkRepo
 import it.jwolff.crawler.crawler.repository.PageRepo
 import it.jwolff.crawler.crawler.worker.CrawlerWorker
 import it.jwolff.crawler.crawler.worker.ResultSaver
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.util.concurrent.*
 
 @Service
 class ThreadService(
-    @Autowired val pageRepo: PageRepo
+    private val pageRepo: PageRepo,
+    private val linkRepo: LinkRepo
 ) {
 
     private val logger: Logger = LoggerFactory.getLogger(ThreadService::class.java)
@@ -26,39 +27,44 @@ class ThreadService(
     var saverThread: Thread? = null
     var saverWorker: ResultSaver? = null
 
-    fun addScraperThread() {
-        val worker = CrawlerWorker("Worker", linksToCheck, visitedLinks, resultQueue)
+    fun addScraperThread(name: String) {
+        val worker = CrawlerWorker(name, linksToCheck, visitedLinks, resultQueue)
         futures.add(executorService.submit(Callable { worker.run() }))
         logger.info("Added crawler")
     }
 
     fun startSaverThread() {
-        saverWorker = ResultSaver(resultQueue, pageRepo)
+        saverWorker = ResultSaver(resultQueue, pageRepo, linkRepo)
         saverThread = Thread(saverWorker)
         saverThread!!.start()
     }
 
+    /**
+     * Loads visited and not visited pages from the DB
+     * Starts scraper and saver threads
+     */
     fun start() {
-        //for debug only!
-//        pageRepo.deleteAll()
+        linksToCheck.addAll(pageRepo.findAllByVisitedFalse().map { "https://en.wikipedia.org${it.url}" })
+        visitedLinks.addAll(pageRepo.findAllByVisitedTrue().map { "https://en.wikipedia.org${it.url}" })
 
-        linksToCheck.addAll(pageRepo.getYetToCheck().map { "https://en.wikipedia.org$it" })
-        visitedLinks.addAll(pageRepo.getVisited().map { "https://en.wikipedia.org$it" })
-
+        // For the first run, start at the Kotlin page
         if (linksToCheck.isEmpty()) {
             linksToCheck.add("https://en.wikipedia.org/wiki/Kotlin_(programming_language)")
         }
 
         for (i in 1..2) {
-            addScraperThread()
+            addScraperThread(i.toString())
         }
         startSaverThread()
     }
 
+    /**
+     * Stops all crawler and saver threads
+     * Waits for crawlers to exit before stopping saver thread
+     */
     fun shutdown() {
         futures.forEach { it.cancel(true) }
         executorService.shutdown()
-
 
         logger.info("Told crawlers to stop")
 

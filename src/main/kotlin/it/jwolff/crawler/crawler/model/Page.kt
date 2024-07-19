@@ -1,24 +1,35 @@
 package it.jwolff.crawler.crawler.model
 
 import it.jwolff.crawler.crawler.Url
-import org.springframework.data.neo4j.core.schema.GeneratedValue
-import org.springframework.data.neo4j.core.schema.Id
-import org.springframework.data.neo4j.core.schema.Node
+import jakarta.persistence.*
 import java.time.Instant
 
-@Node(labels = ["Page"])
-open class Page(
-    @Id @GeneratedValue val id: String?,
+@Entity
+@Table(
+    indexes = [
+        Index(name = "idx_url", columnList = "url")
+    ]
+)
+open class Page() {
+    @Id
+    @GeneratedValue
+    open var id: Long? = null
 
-    var title: String, val url: Url,
+    open lateinit var title: String
 
-    var first_crawled: Instant = Instant.now(),
-    var last_crawled: Instant = Instant.now()
+    open lateinit var url: Url
 
-) {
-    /**
-     * Not automatically populated, to avoid cyclic dependencies when reading from the DB
-     */
-    var outboundLinks: MutableList<Page> = mutableListOf()
+    open var first_crawled: Instant = Instant.now()
+    open var last_crawled: Instant = Instant.now()
+
+    open var visited: Boolean = false
+
+    @OneToMany(mappedBy = "source")
+    open var outboundLinks: MutableList<Link> = mutableListOf()
+
+    constructor(title: String, url: Url) : this() {
+        this.title = title
+        this.url = url
+    }
 }
 

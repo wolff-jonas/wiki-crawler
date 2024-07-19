@@ -2,10 +2,13 @@ package it.jwolff.crawler.crawler
 
 import org.jsoup.nodes.Document
 
+/**
+ * Holds the result from requesting a page
+ */
 data class ScrapeResult(
-    val url: Url, val document: Document, val nonVisitedLinks: List<Link>, val visitedLinks: List<Link>
+    val url: Url, val document: Document, val nonVisitedLinks: List<LinkResult>, val visitedLinks: List<LinkResult>
 )
 
-data class Link(
+data class LinkResult(
     val url: Url, val text: String
 )

@@ -1,0 +1,16 @@
+services:
+  mariadb:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_USER: crawler
+      MARIADB_PASSWORD: crawler_password
+      MARIADB_DATABASE: crawler
+      MARIADB_ROOT_PASSWORD: blkcjdaekxbidzas
+    volumes:
+      - crawler:/var/lib/mysql
+    ports:
+      - 3306:3306
+
+volumes:
+  crawler:
